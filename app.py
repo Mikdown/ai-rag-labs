@@ -32,6 +32,30 @@ def main():
         print("Or use GitHub Models: https://github.com/marketplace/models")
         return
     
+    # Create OpenAI Embeddings instance
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        base_url="https://models.inference.ai.azure.com",
+        api_key=os.getenv("GITHUB_TOKEN"),
+        check_embedding_ctx_length=False
+    )
+    
+    print("=== Embedding Inspector Lab ===")
+    print("Generating embeddings for three sentences...\n")
+    
+    # Test sentences
+    test_sentences = [
+        "The canine barked loudly.",
+        "The dog made a noise.",
+        "The electron spins rapidly."
+    ]
+    
+    # Generate embeddings for each sentence
+    sentence_embeddings = []
+    for i, sentence in enumerate(test_sentences, 1):
+        embedding = embeddings.embed_query(sentence)
+        sentence_embeddings.append(embedding)
+        print(f"Sentence {i}: \"{sentence}\"")
 
 if __name__ == "__main__":
     main()

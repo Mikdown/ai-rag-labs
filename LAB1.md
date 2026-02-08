@@ -70,14 +70,10 @@ Create a loop to:
 
 **Prompt 4: Calculate Cosine Similarities**
 ```
-Add code to calculate and display the cosine similarity between:
-- Sentence 1 and Sentence 2
-- Sentence 2 and Sentence 3
-- Sentence 3 and Sentence 1
-
-Use the cosine_similarity() function (already provided in the starter code)
-Format the output to 4 decimal places using f-strings with :.4f
-Display results with clear labels showing which sentences are being compared
+Create a loop to:
+- Generate an embedding for each sentence using embeddings.embed_query()
+- Store each embedding vector in a list
+- Print each sentence with a number (Sentence 1, Sentence 2, etc.)
 ```
 
 > **Note:** You can create a `cosine_similarity` helper function with a single prompt: "Write a function to calculate cosine similarity using the math module." If you'd like to practice, try generating it yourself!
