@@ -45,9 +45,9 @@ def main():
     
     # Test sentences
     test_sentences = [
-        "The dog barked loudly.",
-        "El perro ladró fuerte.",  # Spanish
-        "Le chien a aboyé fort."  # French
+        "The movie was excellent and entertaining.",
+        "The movie was terrible and boring.",
+        "I enjoyed watching the film."
     ]
     
     # Generate embeddings for each sentence
