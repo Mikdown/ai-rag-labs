@@ -16,7 +16,7 @@ def cosine_similarity(vector_a, vector_b):
     
     dot_product = sum(a * b for a, b in zip(vector_a, vector_b))
     norm_a = math.sqrt(sum(a * a for a in vector_a))
-    norm_b = math.sqrt(b * b for b in vector_b)
+    norm_b = math.sqrt(sum(b * b for b in vector_b))
     
     return dot_product / (norm_a * norm_b)
 
@@ -56,6 +56,18 @@ def main():
         embedding = embeddings.embed_query(sentence)
         sentence_embeddings.append(embedding)
         print(f"Sentence {i}: \"{sentence}\"")
+    
+    # Calculate and display cosine similarities
+    print("\n=== Cosine Similarities ===\n")
+    
+    similarity_1_2 = cosine_similarity(sentence_embeddings[0], sentence_embeddings[1])
+    print(f"Cosine similarity between Sentence 1 and Sentence 2: {similarity_1_2:.4f}")
+    
+    similarity_2_3 = cosine_similarity(sentence_embeddings[1], sentence_embeddings[2])
+    print(f"Cosine similarity between Sentence 2 and Sentence 3: {similarity_2_3:.4f}")
+    
+    similarity_3_1 = cosine_similarity(sentence_embeddings[2], sentence_embeddings[0])
+    print(f"Cosine similarity between Sentence 3 and Sentence 1: {similarity_3_1:.4f}")
 
 if __name__ == "__main__":
     main()
