@@ -45,9 +45,9 @@ def main():
     
     # Test sentences
     test_sentences = [
-        "The movie was excellent and entertaining.",
-        "The movie was terrible and boring.",
-        "I enjoyed watching the film."
+        "The movie F1 was excellent and entertaining.",
+        "The movie Expendables was wonderful and exhilarating.",
+        "I enjoyed watching the film Castaway."
     ]
     
     # Generate embeddings for each sentence
