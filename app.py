@@ -1,7 +1,9 @@
 import os
 import math
+from datetime import datetime
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
+from langchain_core.vectorstores import InMemoryVectorStore
 
 # Load environment variables
 load_dotenv()
@@ -19,6 +21,27 @@ def cosine_similarity(vector_a, vector_b):
     norm_b = math.sqrt(sum(b * b for b in vector_b))
     
     return dot_product / (norm_a * norm_b)
+
+def search_sentences(vector_store, query, k=3):
+    """
+    Search for similar sentences in the vector store
+    
+    Args:
+        vector_store: The InMemoryVectorStore instance
+        query: The search query string
+        k: Number of results to return (default: 3)
+    
+    Returns:
+        List of tuples containing (Document, similarity_score)
+    """
+    results = vector_store.similarity_search_with_score(query, k=k)
+    
+    print(f"\n=== Search Results for: \"{query}\" ===\n")
+    
+    for rank, (document, score) in enumerate(results, 1):
+        print(f"{rank}. Score: {score:.4f} | {document.page_content}")
+    
+    return results
 
 def main():
     print("🤖 Python LangChain Agent Starting...\n")
@@ -40,34 +63,69 @@ def main():
         check_embedding_ctx_length=False
     )
     
+    # Create InMemoryVectorStore instance
+    vector_store = InMemoryVectorStore(embeddings)
+    
     print("=== Embedding Inspector Lab ===")
-    print("Generating embeddings for three sentences...\n")
+    print("Adding sentences to vector store...\n")
     
     # Test sentences
     test_sentences = [
         "The movie F1 was excellent and entertaining.",
-        "The movie Expendables was wonderful and exhilarating.",
-        "I enjoyed watching the film Castaway."
+        "I enjoyed watching the film Castaway.",
+        "The canine barked loudly.",
+        "The dog made a noise.",
+        "The electron spins rapidly.",
+        "I love eating pizza with extra cheese.",
+        "The basketball player scored a three-pointer.",
+        "Rain is forecasted for tomorrow afternoon.",
+        "Python is a popular programming language.",
+        "The kitten purred softly on the couch.",
+        "Quantum mechanics explains particle behavior.",
+        "Homemade pasta tastes better than store-bought.",
+        "The soccer match ended in a tie.",
+        "Clouds are forming over the mountains.",
+        "JavaScript runs in web browsers.",
+        "Puppies need lots of attention and exercise.",
+        "Atoms are made of protons, neutrons, and electrons."
     ]
     
-    # Generate embeddings for each sentence
-    sentence_embeddings = []
+    # Create metadata for each sentence
+    metadatas = [
+        {
+            "created_at": datetime.now().isoformat(),
+            "index": i
+        }
+        for i in range(len(test_sentences))
+    ]
+    
+    # Add all sentences to vector store at once
+    vector_store.add_texts(test_sentences, metadatas=metadatas)
+    
+    print(f"✓ Successfully stored {len(test_sentences)} sentences in vector store\n")
+    print("Sentences added:")
     for i, sentence in enumerate(test_sentences, 1):
-        embedding = embeddings.embed_query(sentence)
-        sentence_embeddings.append(embedding)
-        print(f"Sentence {i}: \"{sentence}\"")
+        print(f"  {i}. \"{sentence}\"")
     
-    # Calculate and display cosine similarities
-    print("\n=== Cosine Similarities ===\n")
+    # Interactive semantic search loop
+    print("\n=== Semantic Search ===\n")
     
-    similarity_1_2 = cosine_similarity(sentence_embeddings[0], sentence_embeddings[1])
-    print(f"Cosine similarity between Sentence 1 and Sentence 2: {similarity_1_2:.4f}")
+    while True:
+        user_query = input("Enter a search query (or 'quit' to exit): ").strip()
+        
+        # Check if user wants to exit
+        if user_query.lower() in ['quit', 'exit']:
+            break
+        
+        # Skip empty queries
+        if not user_query:
+            continue
+        
+        # Perform search
+        search_sentences(vector_store, user_query)
+        print()  # Blank line for readability
     
-    similarity_2_3 = cosine_similarity(sentence_embeddings[1], sentence_embeddings[2])
-    print(f"Cosine similarity between Sentence 2 and Sentence 3: {similarity_2_3:.4f}")
-    
-    similarity_3_1 = cosine_similarity(sentence_embeddings[2], sentence_embeddings[0])
-    print(f"Cosine similarity between Sentence 3 and Sentence 1: {similarity_3_1:.4f}")
+    print("\n👋 Thank you for using the Semantic Search tool. Goodbye!")
 
 if __name__ == "__main__":
     main()
