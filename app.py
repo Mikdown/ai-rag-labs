@@ -2,6 +2,7 @@ import os
 import math
 from datetime import datetime
 from dotenv import load_dotenv
+import tiktoken
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.documents import Document
@@ -225,11 +226,15 @@ def load_document(vector_store, file_path):
             }
         )
         
+        # Calculate token count
+        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        token_count = len(encoding.encode(content))
+        
         # Add to vector store
         doc_ids = vector_store.add_documents([doc])
         doc_id = doc_ids[0] if doc_ids else None
         
-        print(f"✓ Successfully loaded '{os.path.basename(file_path)}' ({len(content)} characters)")
+        print(f"✓ Successfully loaded '{os.path.basename(file_path)}' ({len(content)} characters, {token_count} tokens)")
         
         return doc_id
     
@@ -270,6 +275,13 @@ def main():
     # Load HealthInsuranceBrochure.md
     brochure_path = os.path.join(os.path.dirname(__file__), "HealthInsuranceBrochure.md")
     doc_id = load_document(vector_store, brochure_path)
+    
+    if doc_id:
+        print(f"✓ Document successfully stored with ID: {doc_id}\n")
+    
+    # Load EmployeeHandbook.md
+    handbook_path = os.path.join(os.path.dirname(__file__), "EmployeeHandbook.md")
+    doc_id = load_document(vector_store, handbook_path)
     
     if doc_id:
         print(f"✓ Document successfully stored with ID: {doc_id}\n")
