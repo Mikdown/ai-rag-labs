@@ -4,6 +4,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_core.documents import Document
 
 # Load environment variables
 load_dotenv()
@@ -192,6 +193,54 @@ def hybrid_search_by_category(vector_store, query, category, k=3, vector_weight=
     
     return top_k
 
+def load_document(vector_store, file_path):
+    """
+    Load a document from a file and add it to the vector store.
+    
+    Args:
+        vector_store: The InMemoryVectorStore instance
+        file_path: Path to the document file to load
+    
+    Returns:
+        The document ID from the vector store
+    
+    Raises:
+        FileNotFoundError: If the file does not exist
+        Exception: For other I/O or processing errors
+    """
+    try:
+        # Read the file
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        if not content:
+            print(f"⚠️  Warning: File '{os.path.basename(file_path)}' is empty")
+        
+        # Create Document object
+        doc = Document(
+            page_content=content,
+            metadata={
+                'fileName': os.path.basename(file_path),
+                'createdAt': datetime.now().isoformat()
+            }
+        )
+        
+        # Add to vector store
+        doc_ids = vector_store.add_documents([doc])
+        doc_id = doc_ids[0] if doc_ids else None
+        
+        print(f"✓ Successfully loaded '{os.path.basename(file_path)}' ({len(content)} characters)")
+        
+        return doc_id
+    
+    except FileNotFoundError:
+        print(f"❌ Error: File not found '{file_path}'")
+        return None
+    
+    except Exception as e:
+        print(f"❌ Error loading document '{file_path}': {str(e)}")
+        return None
+
 def main():
     print("🤖 Python LangChain Agent Starting...\n")
 
@@ -215,148 +264,17 @@ def main():
     # Create InMemoryVectorStore instance
     vector_store = InMemoryVectorStore(embeddings)
     
-    print("=== Embedding Inspector Lab ===")
-    print("Adding sentences to vector store...\n")
+    # Load documents into vector database
+    print("=== Loading Documents into Vector Database ===\n")
     
-    # Test sentences with categories
-    test_sentences = [
-        "The movie F1 was excellent and entertaining.",
-        "I enjoyed watching the film Castaway.",
-        "The canine barked loudly.",
-        "The dog made a noise.",
-        "The electron spins rapidly.",
-        "I love eating pizza with extra cheese.",
-        "The basketball player scored a three-pointer.",
-        "Rain is forecasted for tomorrow afternoon.",
-        "Python is a popular programming language.",
-        "The kitten purred softly on the couch.",
-        "Quantum mechanics explains particle behavior.",
-        "Homemade pasta tastes better than store-bought.",
-        "The soccer match ended in a tie.",
-        "Clouds are forming over the mountains.",
-        "JavaScript runs in web browsers.",
-        "Puppies need lots of attention and exercise.",
-        "Atoms are made of protons, neutrons, and electrons."
-    ]
+    # Load HealthInsuranceBrochure.md
+    brochure_path = os.path.join(os.path.dirname(__file__), "HealthInsuranceBrochure.md")
+    doc_id = load_document(vector_store, brochure_path)
     
-    # Define categories for each sentence
-    categories = [
-        "movies",
-        "movies",
-        "animals",
-        "animals",
-        "science",
-        "food",
-        "sports",
-        "weather",
-        "programming",
-        "animals",
-        "science",
-        "food",
-        "sports",
-        "weather",
-        "programming",
-        "animals",
-        "science"
-    ]
+    if doc_id:
+        print(f"✓ Document successfully stored with ID: {doc_id}\n")
     
-    # Create metadata for each sentence including category
-    metadatas = [
-        {
-            "created_at": datetime.now().isoformat(),
-            "index": i,
-            "category": categories[i]
-        }
-        for i in range(len(test_sentences))
-    ]
-    
-    # Add all sentences to vector store at once
-    vector_store.add_texts(test_sentences, metadatas=metadatas)
-    
-    print(f"✓ Successfully stored {len(test_sentences)} sentences in vector store\n")
-    print("Sentences added:")
-    for i, sentence in enumerate(test_sentences, 1):
-        print(f"  {i}. \"{sentence}\"")
-    
-    # Interactive semantic search loop
-    print("\n=== Semantic Search ===")
-    print("Available Categories:", ", ".join(get_available_categories(vector_store)))
-    print("\nCommands:")
-    print("  - 'vector <query>' or just '<query>' for vector similarity search")
-    print("  - 'hybrid <query>' for hybrid search (vector + keyword matching)")
-    print("  - 'both <query>' to compare both methods")
-    print("  - 'categories' to list available categories")
-    print("  - 'vector-cat <category> <query>' for category-filtered vector search")
-    print("  - 'hybrid-cat <category> <query>' for category-filtered hybrid search")
-    print("  - 'quit' or 'exit' to close\n")
-    
-    while True:
-        user_input = input("Enter search command: ").strip()
-        
-        # Check if user wants to exit
-        if user_input.lower() in ['quit', 'exit']:
-            break
-        
-        # Skip empty input
-        if not user_input:
-            continue
-        
-        # Handle special commands
-        if user_input.lower() == 'categories':
-            categories = get_available_categories(vector_store)
-            print(f"\n✓ Available Categories ({len(categories)}):")
-            for i, cat in enumerate(categories, 1):
-                print(f"  {i}. {cat}")
-            print()
-            continue
-        
-        # Parse command and query
-        parts = user_input.split(maxsplit=2)
-        command = parts[0].lower() if parts else 'vector'
-        
-        # Handle category-filtered searches
-        if command in ['vector-cat', 'hybrid-cat']:
-            if len(parts) < 3:
-                print("❌ Usage: 'vector-cat <category> <query>' or 'hybrid-cat <category> <query>'\n")
-                continue
-            
-            category = parts[1].lower()
-            query = parts[2]
-            
-            # Check if category exists
-            available_categories = get_available_categories(vector_store)
-            if category not in available_categories:
-                print(f"❌ Category '{category}' not found. Available: {', '.join(available_categories)}\n")
-                continue
-            
-            if command == 'vector-cat':
-                search_by_category(vector_store, query, category)
-            else:  # hybrid-cat
-                hybrid_search_by_category(vector_store, query, category)
-            print()
-            continue
-        
-        # Handle regular searches
-        query = parts[1] if len(parts) > 1 else (parts[0] if len(parts) == 1 and command not in ['vector', 'hybrid', 'both'] else '')
-        
-        # Handle different commands
-        if command in ['vector', 'hybrid', 'both'] and query:
-            if command in ['vector', 'both']:
-                search_sentences(vector_store, query)
-            if command in ['hybrid', 'both']:
-                if command == 'both':
-                    print()  # Add spacing between methods
-                hybrid_search(vector_store, query)
-        elif command not in ['vector', 'hybrid', 'both']:
-            # No command prefix, treat entire input as query for vector search
-            search_sentences(vector_store, user_input)
-        else:
-            print("❌ Please enter a valid query. Use 'help' for commands or type 'quit' to exit.\n")
-            continue
-        
-        print()  # Blank line for readability
-    
-    print("\n👋 Thank you for using the Semantic Search tool. Goodbye!")
+    return vector_store
 
 if __name__ == "__main__":
     main()
